@@ -1,0 +1,4 @@
+requests>=2.31
+python-dotenv>=1.0
+# Leçon 16 uniquement : l'agent testeur lance les tests avec pytest
+pytest>=8.0

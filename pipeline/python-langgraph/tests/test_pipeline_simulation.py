@@ -7,7 +7,7 @@ from pathlib import Path
 
 from main import executer
 
-CAHIER = (Path(__file__).parent.parent / "exemples" / "livraison_abidjan.md").read_text(encoding="utf-8")
+CAHIER = (Path(__file__).parent.parent / "exemples" / "cahier-des-charges-livrabidjan.md").read_text(encoding="utf-8")
 
 
 def test_pipeline_complet_en_simulation(tmp_path):

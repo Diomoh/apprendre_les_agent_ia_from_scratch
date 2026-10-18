@@ -1,7 +1,7 @@
 """
 main.py - Lancer le pipeline sur une fonctionnalité.
 
-    python main.py --cahier exemples/livraison_abidjan.md --fonctionnalite Commande --simulation
+    python main.py --cahier exemples/cahier-des-charges-livrabidjan.md --fonctionnalite Commande --simulation
     python main.py --cahier mon_cahier.md --fonctionnalite "Suivi temps réel"
 
 Le pipeline s'arrête deux fois pour vous : après le design, puis avant la fusion.

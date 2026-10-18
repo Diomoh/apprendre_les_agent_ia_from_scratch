@@ -151,6 +151,14 @@ python exemple.py
 
 ---
 
+## Après le cours : le pipeline multi-agents
+
+Le dossier [`pipeline/`](pipeline/) organise l'équipe d'agents en pipeline de production
+(cahier des charges -> PRD -> architecture -> code testé et revu), en deux versions :
+codée avec LangGraph, et en subagents Claude Code.
+
+---
+
 ## Les principes du cours
 
 1. **Un seul agent qui grandit** : la classe `Agent` de la leçon 01 est la même que celle de la leçon 16, enrichie.

@@ -1,0 +1,7 @@
+langgraph>=1.0
+pydantic>=2.6
+requests>=2.31
+python-dotenv>=1.0
+pytest>=8.0
+# Optionnel : scan de sécurité du code généré à l'étape Integrate
+# bandit>=1.7

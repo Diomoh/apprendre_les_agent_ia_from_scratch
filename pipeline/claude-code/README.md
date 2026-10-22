@@ -225,7 +225,9 @@ cp -r pipeline-agents-ia-claude-code/.claude  /chemin/vers/mon-projet/
 cp pipeline-agents-ia-claude-code/CLAUDE.md   /chemin/vers/mon-projet/   # puis adaptez-le
 ```
 
-Dans Claude Code, tapez `/agents` : les 9 agents doivent apparaître. Vous pouvez aussi appeler un
+Pour vérifier que les 9 agents sont bien chargés, lancez `claude agents` dans le terminal, ou demandez
+à Claude Code « liste les subagents disponibles ». (L'ancienne commande `/agents` a été retirée.)
+Vous pouvez aussi appeler un
 agent seul, par exemple : « Utilise l'agent critique sur docs/architecture/01-commande.md ».
 
 ---

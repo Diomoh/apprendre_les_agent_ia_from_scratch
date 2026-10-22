@@ -9,8 +9,10 @@ et le workflow est une skill que vous lancez avec **`/pipeline`**. La session pr
 devient le **chef d'orchestre** : elle délègue chaque étape au bon agent, applique les règles de
 décision, et s'arrête deux fois pour vous demander votre accord.
 
-Un passage du pipeline traite **une seule fonctionnalité**. Pour un projet complet, on le relance
-fonctionnalité après fonctionnalité.
+**Vous ne donnez que le cahier des charges** : `/pipeline docs/mon-cahier.pdf` (ou simplement
+`/pipeline` s'il est le seul document dans `docs/`). Le pipeline découpe lui-même le projet en
+fonctionnalités, puis les traite **une par une, dans l'ordre**, en enchaînant automatiquement de
+l'une à la suivante après chaque fusion.
 
 ---
 
@@ -18,7 +20,8 @@ fonctionnalité après fonctionnalité.
 
 ```mermaid
 flowchart TD
-    CDC([Cahier des charges]) --> A[1. analyste-produit<br/>rédige le PRD]
+    CDC([Cahier des charges]) --> C0[0. analyste-produit<br/>cadrage : PRD principal<br/>+ liste des fonctionnalités]
+    C0 --> A[1. analyste-produit<br/>PRD de la fonctionnalité]
     A --> AR[2a. architecte<br/>rédige le dossier d'architecture]
     AR --> CR[2b. critique<br/>note le design sur 10]
     CR -- "note sous 8 ou sécurité sous 7<br/>et moins de 3 tours" --> AR
@@ -38,10 +41,12 @@ flowchart TD
     D -- "oui, moins de 2 corrections" --> FX[7. Fix<br/>par dev-backend / dev-frontend]
     FX --> I
     D -- "non, ou 2 corrections atteintes" --> M{{8. Merge<br/>validation humaine}}
-    M --> FIN([Branche prête + rapport])
+    M -- "accord : fonctionnalité suivante" --> A
+    M -- "plus aucune fonctionnalité" --> FIN([Projet livré + bilan])
 ```
 
 Les hexagones sont les **deux seuls moments où le pipeline s'arrête et attend votre accord**.
+Le cadrage (étape 0) n'a lieu qu'une fois par projet ; il est validé avec la première fonctionnalité.
 
 ---
 
@@ -64,7 +69,8 @@ Les hexagones sont les **deux seuls moments où le pipeline s'arrête et attend 
         ├── SKILL.md              le workflow étape par étape : c'est la commande /pipeline
         ├── grille-critique.md    les 5 critères de notation du design
         └── modeles/
-            ├── prd.md            modèle de PRD
+            ├── prd-principal.md  modèle du PRD principal (cadrage)
+            ├── prd.md            modèle de PRD d'une fonctionnalité
             └── architecture.md   modèle de dossier d'architecture
 CLAUDE.md                         conventions du projet (stack, dossiers docs/, identifiants)
 exemple/
@@ -82,14 +88,24 @@ pas modifier le code qu'ils jugent : c'est le principe des **droits minimaux**.
 chemins des documents utiles, lit sa réponse et décide de la suite selon `SKILL.md`. Les agents ne
 se parlent pas entre eux : **ils communiquent par les fichiers** de `docs/`.
 
+### Étape 0 : Cadrage, avec `analyste-produit` (une fois par projet)
+
+| | |
+| --- | --- |
+| **Quand** | Au premier `/pipeline` du projet, si `docs/prd/00-prd-principal.md` n'existe pas encore. |
+| **Lit** | Tout le cahier des charges. |
+| **Fait** | Rédige le PRD principal : vision, rôles, périmètre du MVP, glossaire, exigences de sécurité transverses, et la **liste ordonnée des fonctionnalités** (dépendances, statut « à faire »). |
+| **Écrit** | `docs/prd/00-prd-principal.md` |
+| **Ensuite** | Sans s'arrêter, le chef d'orchestre prend la première fonctionnalité « à faire », la passe « en cours » et lance l'étape 1. Vous validerez le cadrage à l'étape 3. |
+
 ### Étape 1 : Intake, avec `analyste-produit`
 
 | | |
 | --- | --- |
-| **Quand** | Dès que vous lancez `/pipeline <cahier> <fonctionnalité>`. |
+| **Quand** | Après le cadrage, puis au début de chaque nouvelle fonctionnalité. |
 | **Lit** | Le cahier des charges, le PRD principal s'il existe, les PRD existants (pour ne pas réutiliser un identifiant). |
 | **Fait** | Liste les questions et hypothèses, puis rédige le PRD : user stories et critères d'acceptation, règles de gestion **RG-xx**, exigences de sécurité **ES-xx**, priorités, hors périmètre. |
-| **Écrit** | `docs/prd/00-prd-principal.md` (au premier passage seulement) et `docs/prd/NN-<fonctionnalite>.md`. |
+| **Écrit** | `docs/prd/NN-<fonctionnalite>.md` (NN = son ordre dans le PRD principal). |
 | **Ensuite** | Le chef d'orchestre passe à l'architecte. |
 
 ### Étape 2a : Design, avec `architecte`
@@ -116,8 +132,8 @@ se parlent pas entre eux : **ils communiquent par les fichiers** de `docs/`.
 | | |
 | --- | --- |
 | **Quand** | Quand le design est validé par le Critique, ou après 3 tours. |
-| **Vous recevez** | Les chemins du PRD et du dossier d'architecture, les hypothèses de l'Analyste, la note finale, les objections restantes, la liste des tâches. |
-| **Ensuite** | Votre accord lance le Build. Une correction repart vers l'Architecte (ou l'Analyste si elle concerne le PRD), puis revient vers vous. |
+| **Vous recevez** | Au premier passage : le PRD principal et la liste des fonctionnalités. Puis : les chemins du PRD et du dossier d'architecture, les hypothèses de l'Analyste, la note finale, les objections restantes, la liste des tâches. |
+| **Vous répondez** | `ok` : le Build démarre. Une correction : elle repart vers l'Analyste (PRD, liste des fonctionnalités) ou l'Architecte (design), puis revient vers vous. `arrête-toi là` : le pipeline s'arrête et reprendra cette fonctionnalité au prochain `/pipeline`. |
 
 ### Étape 4 : Build, avec `dev-backend`, `dev-frontend` et `testeur`
 
@@ -160,7 +176,7 @@ Chacun répond dans un format imposé avec **BLOQUANT : oui / non**. S'il y a au
 | --- | --- |
 | **Quand** | Quand plus rien ne bloque, ou après 2 cycles de correction. |
 | **Fait** | Le chef d'orchestre écrit `docs/pipeline/<fonctionnalite>-rapport.md`, prépare le commit et la description de PR, puis **s'arrête**. |
-| **Ensuite** | La fusion n'a lieu qu'avec votre accord explicite. |
+| **Vous répondez** | `ok` : fusion, la fonctionnalité passe « livrée » et le pipeline **enchaîne seul sur la suivante** (retour à l'étape 1). `arrête-toi là` : fusion, puis arrêt. Un refus : pas de fusion, arrêt. |
 
 Pendant tout le passage, le chef d'orchestre tient un journal dans `docs/pipeline/<fonctionnalite>.md`.
 
@@ -174,25 +190,33 @@ Pendant tout le passage, le chef d'orchestre tient un journal dans `docs/pipelin
 start-up de livraison de colis à moto dans le Grand Abidjan, avec un pilote à Cocody, Plateau et Marcory.
 Copiez-le dans le dossier `docs/` de votre projet.
 
-### Les fonctionnalités dégagées
+### La seule commande à taper
 
-| Ordre | Fonctionnalité | Section du cahier | Commande |
+```
+/pipeline docs/cahier-des-charges-livrabidjan.md
+```
+
+### Les fonctionnalités dégagées par le cadrage (étape 0)
+
+| Ordre | Fonctionnalité | Section du cahier | Dépend de |
 | --- | --- | --- | --- |
-| 1 | Commande | 2.1 | `/pipeline docs/cahier-des-charges-livrabidjan.md Commande` |
-| 2 | Attribution livreur | 2.2 | `/pipeline docs/cahier-des-charges-livrabidjan.md Attribution livreur` |
-| 3 | Suivi temps réel | 2.3 | `/pipeline docs/cahier-des-charges-livrabidjan.md Suivi temps réel` |
-| 4 | Paiement | 2.4 | `/pipeline docs/cahier-des-charges-livrabidjan.md Paiement` |
-| 5 | Back-office | 2.5 | `/pipeline docs/cahier-des-charges-livrabidjan.md Back-office` |
+| 01 | Commande | 2.1 | |
+| 02 | Attribution livreur | 2.2 | 01 |
+| 03 | Suivi temps réel | 2.3 | 02 |
+| 04 | Paiement | 2.4 | 01 |
+| 05 | Back-office | 2.5 | |
 
 L'ordre suit les dépendances : il faut des commandes avant de les attribuer, une course attribuée
-avant de la suivre.
+avant de la suivre. Exemple illustratif : le découpage réel est proposé par l'Analyste, et vous
+pouvez le corriger au premier arrêt.
 
 ### Le déroulement attendu du premier passage (« Commande »)
 
 Exemple illustratif : le contenu exact dépend du modèle et de votre projet.
 
-1. **analyste-produit** crée `docs/prd/00-prd-principal.md` (vision, rôles client / livreur / admin,
-   glossaire : course, zone, repère) et `docs/prd/01-commande.md`, avec par exemple :
+1. **analyste-produit** fait le cadrage : `docs/prd/00-prd-principal.md` (vision, rôles client / livreur /
+   admin, glossaire : course, zone, repère, et la liste ci-dessus). Puis il rédige `docs/prd/01-commande.md`,
+   avec par exemple :
    - US-01 « en tant que client, je veux commander une course entre deux points de la carte » ;
    - RG-01 ordre des statuts (créée, acceptée, récupérée, en livraison, livrée) ;
    - RG-02 prix selon la zone de départ et d'arrivée ;
@@ -204,16 +228,20 @@ Exemple illustratif : le contenu exact dépend du modèle et de votre projet.
    `Commande`, endpoints, une mesure par ES, tâches T-01 à T-03).
 3. **critique**, tour 1 : sécurité 6/10, car ES-03 n'a pas de mesure. Renvoyé.
    **architecte**, tour 2 : ajoute un sérialiseur livreur sans le téléphone. **critique** : 8,4/10, validé.
-4. **Arrêt** : vous relisez les deux documents et répondez « ok ».
+4. **Arrêt** : vous relisez le PRD principal, la liste des fonctionnalités, le PRD et l'architecture
+   de « Commande », et répondez « ok ».
 5. **dev-backend** (T-01, T-02) et **dev-frontend** (T-03) travaillent en parallèle sur
    `feature/commande` ; **testeur** écrit `test_rg_01_...`, `test_rg_02_...`, `test_es_01_...`.
 6. **Intégration** : tests, migrations et `bandit` passent.
 7. **relecteur-securite** bloque : un endpoint de détail renvoie encore le téléphone du client.
    **dev-backend** corrige (Fix), les tests et la revue repartent, plus rien ne bloque.
-8. **Arrêt** : vous lisez `docs/pipeline/commande-rapport.md` et validez la fusion.
+8. **Arrêt** : vous lisez `docs/pipeline/commande-rapport.md` et répondez « ok ».
+9. Le pipeline fusionne, marque « Commande » comme livrée et **enchaîne seul** sur « Attribution
+   livreur » (étape 1). L'Analyste réutilise le PRD principal et numérote après le dernier identifiant
+   existant (RG-04, ES-04...) : la traçabilité reste unique sur tout le projet.
 
-Au passage suivant (« Attribution livreur »), l'Analyste réutilise le PRD principal et numérote
-après le dernier identifiant existant (RG-04, ES-04...) : la traçabilité reste unique sur tout le projet.
+Si vous fermez Claude Code en cours de route, retapez simplement `/pipeline` : il reprend la
+première fonctionnalité qui n'est pas « livrée », grâce aux statuts du PRD principal.
 
 ---
 
@@ -241,6 +269,8 @@ agent seul, par exemple : « Utilise l'agent critique sur docs/architecture/01-c
 | Donner un autre modèle à un agent (ex. un vrai second avis) | ajouter `model: opus` ou `model: sonnet` dans l'en-tête de son fichier |
 | Ajouter un agent (ex. UI/UX, DevOps) | un nouveau fichier dans `.claude/agents/` + son étape dans `SKILL.md` |
 | Changer la structure du PRD ou du design | `.claude/skills/pipeline/modeles/` |
+| Changer la façon de découper un projet en fonctionnalités | le mode CADRAGE de `.claude/agents/analyste-produit.md` |
+| Ne plus enchaîner automatiquement les fonctionnalités | la fin de l'étape 7 dans `SKILL.md` |
 | Adapter la stack, les dossiers, les commandes de test | `CLAUDE.md` |
 
 ---

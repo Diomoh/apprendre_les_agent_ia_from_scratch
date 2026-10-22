@@ -20,7 +20,8 @@ docs/
 - Identifiants uniques dans tout le projet : US-xx (stories), RG-xx (règles de gestion),
   ES-xx (exigences de sécurité), T-xx (tâches), ADR-xx (décisions).
 - Chaque RG/ES appliquée est citée en commentaire dans le code et dans le nom de son test.
-- Un passage du pipeline = une fonctionnalité : `/pipeline <cahier.md> <fonctionnalité>`.
+- Lancer le pipeline : `/pipeline docs/<cahier des charges>`. Il découpe le projet en fonctionnalités
+  (liste et statuts dans `docs/prd/00-prd-principal.md`) et les traite une par une.
 - Aucune fusion sur la branche principale sans validation humaine.
 - Données personnelles : respecter la loi ivoirienne n°2013-450 (autorité ARTCI).
 

@@ -17,7 +17,8 @@ introuvable.
 ## Arguments
 - **Cahier des charges** : le premier argument ; sinon le document à la racine de `docs/`
   (.md, .pdf ou .txt). S'il y en a plusieurs ou aucun, pose la question avant de commencer.
-- **Fonctionnalité** : le reste des arguments, facultatif ; sinon la première « à faire » du PRD principal.
+- **Fonctionnalité** : le reste des arguments, facultatif ; sinon la première « en cours » du PRD
+  principal, et s'il n'y en a pas, la première « à faire ».
 
 ## Documents
 ```
@@ -53,8 +54,16 @@ documents produits : fie-toi aux comptes rendus, sauf pour présenter le dossier
 Si `docs/prd/00-prd-principal.md` n'existe pas, lance **analyste-produit** :
 - À lire : le cahier des charges ; `modeles/prd-principal.md`.
 - À écrire : `docs/prd/00-prd-principal.md`. Mode : CADRAGE.
-Enchaîne SANS t'arrêter. Choisis la fonctionnalité (argument, sinon la première « à faire ») et
-passe son statut à « en cours ».
+Enchaîne SANS t'arrêter. Choisis la fonctionnalité (voir Arguments) et passe son statut à « en cours ».
+
+## Reprise d'une fonctionnalité « en cours »
+Ne refais pas ce qui existe déjà. Reprends au premier élément manquant :
+- pas de `docs/prd/NN-<f>.md` -> étape 1 ;
+- PRD présent, pas de `docs/architecture/NN-<f>.md` ou dernier tour du Critique non validé
+  dans le journal -> étape 2 ;
+- PRD et architecture validés, pas de branche `feature/NN-<f>` -> étape 3 (présente le dossier) ;
+- branche existante sans rapport -> étape 4 pour les tâches non faites (journal), sinon étape 5 ;
+- rapport présent -> étape 7.
 
 ## Étape 1 - Intake
 Relève les derniers identifiants utilisés (`grep -ho "\(US\|RG\|ES\)-[0-9]*" docs/prd | sort -V | tail`).

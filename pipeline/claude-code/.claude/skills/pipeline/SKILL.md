@@ -7,96 +7,131 @@ disable-model-invocation: true
 
 # Pipeline multi-agents : $ARGUMENTS
 
-Tu es le chef d'orchestre. Tu ne rédiges ni le PRD, ni le design, ni le code : tu délègues
-chaque étape au subagent prévu et tu appliques les règles de décision ci-dessous.
+Tu es le chef d'orchestre. Tu ne rédiges ni le PRD, ni le design, ni le code : tu délègues chaque
+étape au subagent prévu, avec une FICHE DE MISSION précise, et tu appliques les règles de décision.
 
 Tu ne t'arrêtes pour attendre l'humain qu'à DEUX moments : l'étape 3 (Validation) et l'étape 7
-(Merge). Partout ailleurs tu enchaînes sans demander. Tu ne poses aucune autre question, sauf si
-tu ne trouves pas le cahier des charges.
+(Merge). Partout ailleurs tu enchaînes sans demander. Seule exception : le cahier des charges
+introuvable.
 
 ## Arguments
-- **Cahier des charges** : le premier argument. S'il est absent, prends le document situé à la
-  racine de `docs/` (fichier .md, .pdf ou .txt). S'il y en a plusieurs ou aucun, c'est le seul cas
-  où tu poses une question avant de commencer.
-- **Fonctionnalité** : le reste des arguments, facultatif. Si elle est absente, tu prends la
-  première fonctionnalité au statut « à faire » dans `docs/prd/00-prd-principal.md` (étape 0).
+- **Cahier des charges** : le premier argument ; sinon le document à la racine de `docs/`
+  (.md, .pdf ou .txt). S'il y en a plusieurs ou aucun, pose la question avant de commencer.
+- **Fonctionnalité** : le reste des arguments, facultatif ; sinon la première « à faire » du PRD principal.
 
-## Journal
-Tiens à jour, dans `docs/pipeline/<fonctionnalite>.md`, un journal court de chaque étape
-(qui, quoi, résultat). C'est la trace que lira le validateur humain.
+## Documents
+```
+docs/prd/00-prd-principal.md         cadrage + liste et statuts des fonctionnalités
+docs/prd/NN-<fonctionnalite>.md       spécifications fonctionnelles
+docs/architecture/00-architecture-globale.md
+docs/architecture/NN-<fonctionnalite>.md
+docs/pipeline/NN-<fonctionnalite>.md  ton journal (une ligne par étape)
+```
+Modèles : `.claude/skills/pipeline/modeles/`. Grille du Critique : `.claude/skills/pipeline/grille-critique.md`.
 
-## Étape 0 - Cadrage du projet (automatique, une seule fois par projet)
-Si `docs/prd/00-prd-principal.md` n'existe pas :
-1. Lance **analyste-produit** en mode CADRAGE avec le chemin du cahier des charges. Il écrit le
-   PRD principal, dont la section « Fonctionnalités » : la liste ordonnée des fonctionnalités, avec
-   leurs dépendances et le statut « à faire ».
-2. Note dans le journal la liste obtenue, puis enchaîne SANS t'arrêter : le cadrage sera validé
-   par l'humain en même temps que la première fonctionnalité, à l'étape 3.
+## La fiche de mission (économie de tokens : règle absolue)
+Chaque agent ne lit QUE ce que sa fiche liste. Tu ne lui donnes jamais « le dossier docs » ni
+« le projet ». Quand une information tient en quelques lignes (texte des RG/ES d'une tâche,
+objections, problèmes à corriger), recopie-la dans la fiche au lieu de lui faire lire un fichier.
 
-Choisis ensuite la fonctionnalité traitée (argument, sinon la première « à faire ») et passe son
-statut à « en cours » dans le PRD principal.
+```
+FICHE DE MISSION
+Agent : <nom>          Fonctionnalité : NN-<nom>
+Objectif : <une phrase>
+À lire (rien d'autre) :
+- <chemin> [sections : ...]
+À écrire :
+- <chemin>
+Données : <texte recopié : RG/ES de la tâche, objections, problèmes, commandes de test...>
+Retour : ton COMPTE RENDU au format standard, rien d'autre.
+```
+
+Tu ne gardes de chaque compte rendu que l'essentiel dans ton journal. Ne relis pas toi-même les
+documents produits : fie-toi aux comptes rendus, sauf pour présenter le dossier à l'humain.
+
+## Étape 0 - Cadrage (une seule fois par projet)
+Si `docs/prd/00-prd-principal.md` n'existe pas, lance **analyste-produit** :
+- À lire : le cahier des charges ; `modeles/prd-principal.md`.
+- À écrire : `docs/prd/00-prd-principal.md`. Mode : CADRAGE.
+Enchaîne SANS t'arrêter. Choisis la fonctionnalité (argument, sinon la première « à faire ») et
+passe son statut à « en cours ».
 
 ## Étape 1 - Intake
-Lance **analyste-produit** avec : le chemin du cahier des charges et le nom de la fonctionnalité.
-Il écrit le PRD de la fonctionnalité dans `docs/prd/`.
+Relève les derniers identifiants utilisés (`grep -ho "\(US\|RG\|ES\)-[0-9]*" docs/prd | sort -V | tail`).
+Lance **analyste-produit** :
+- À lire : le cahier des charges [uniquement les sections de cette fonctionnalité, d'après le
+  tableau du PRD principal] ; `docs/prd/00-prd-principal.md` [sections Glossaire et Exigences de
+  sécurité transverses] ; `modeles/prd.md`.
+- À écrire : `docs/prd/NN-<fonctionnalite>.md`. Mode : INTAKE.
+- Données : derniers identifiants utilisés.
 
 ## Étape 2 - Design : boucle Architecte / Critique (3 tours maximum)
 Pour tour = 1, 2, 3 :
-1. Lance **architecte** avec le chemin du PRD (et, à partir du tour 2, les objections du tour précédent).
-2. Lance **critique** avec les chemins du PRD et du dossier d'architecture.
-3. Lis ses NOTES et applique la règle, sans l'interpréter :
-   - VALIDÉ si MOYENNE >= 8 ET securite >= 7 -> passe à l'étape 3.
-   - Sinon, si tour < 3 -> transmets les OBJECTIONS à l'architecte, tour suivant.
-   - Sinon (tour 3 atteint) -> passe à l'étape 3 en signalant les objections restantes.
-Note chaque tour (notes, objections, décision) dans le journal et dans la section « Historique »
-du dossier d'architecture.
+1. **architecte** :
+   - À lire : `docs/prd/NN-<f>.md` ; `docs/prd/00-prd-principal.md` [sections Vision, Rôles,
+     Exigences de sécurité transverses] ; `docs/architecture/00-architecture-globale.md` s'il existe ;
+     `modeles/architecture.md` ; à partir du tour 2, son propre `docs/architecture/NN-<f>.md`.
+   - Dossiers de code à lister si besoin : ceux déjà créés par les fonctionnalités précédentes.
+   - À écrire : `docs/architecture/NN-<f>.md` (et l'architecture globale au premier passage).
+   - Données : à partir du tour 2, les OBJECTIONS du Critique ; le commentaire humain s'il y en a un.
+2. **critique** :
+   - À lire : `docs/prd/NN-<f>.md` ; `docs/architecture/NN-<f>.md` ; `grille-critique.md`.
+3. Applique la règle, sans l'interpréter :
+   - VALIDÉ si MOYENNE >= 8 ET securite >= 7 -> étape 3.
+   - Sinon, si tour < 3 -> tour suivant avec les OBJECTIONS.
+   - Sinon -> étape 3 en signalant les objections restantes.
+Note chaque tour dans ton journal.
 
 ## Étape 3 - Validation humaine (ARRÊT OBLIGATOIRE)
-Présente :
-- au premier passage du projet : le PRD principal et sa liste ordonnée de fonctionnalités ;
-- les chemins du PRD et du dossier d'architecture de la fonctionnalité ;
-- les hypothèses de l'Analyste, la note finale du Critique et ses objections restantes ;
-- la liste des tâches T-xx.
-Puis ARRÊTE-TOI et attends la réponse. Ne lance aucun développement sans un accord explicite.
+Présente, en peu de lignes : au premier passage le PRD principal et la liste des fonctionnalités ;
+les chemins du PRD et du dossier d'architecture ; les hypothèses de l'Analyste ; la note finale et
+les objections restantes ; les tâches T-xx. Puis ARRÊTE-TOI.
 - Accord -> étape 4.
-- Correction demandée -> renvoie-la à l'analyste (si elle concerne le PRD ou la liste des
-  fonctionnalités) ou à l'architecte (si elle concerne le design), refais la boucle de l'étape 2,
-  puis reviens ici.
-- « Arrête-toi là » -> laisse le statut « en cours » et termine : un prochain `/pipeline`
-  reprendra cette fonctionnalité.
+- Correction -> à l'analyste (PRD, liste des fonctionnalités) ou à l'architecte (design), avec la
+  correction recopiée dans les Données ; refais l'étape 2 ; reviens ici.
+- « Arrête-toi là » -> statut « en cours » conservé, fin.
 
 ## Étape 4 - Build en parallèle
-1. Crée la branche `feature/<fonctionnalite>` si elle n'existe pas.
-2. Respecte les dépendances : une tâche ne démarre que lorsque celles dont elle dépend sont faites.
-3. Lance EN PARALLÈLE, pour chaque tâche prête : **dev-backend** ou **dev-frontend** selon sa couche.
-   Donne à chacun uniquement : l'identifiant de sa tâche, les chemins du PRD et du dossier
-   d'architecture, et la consigne de ne lire que ce qui concerne sa tâche.
-4. Dès qu'un dev a fini sa tâche, lance **testeur** sur cette tâche.
-5. Si un testeur signale un échec dû au code, renvoie le rapport au dev concerné (2 allers-retours maximum).
+1. Crée la branche `feature/NN-<f>` si elle n'existe pas.
+2. Respecte les dépendances entre tâches. Lance EN PARALLÈLE chaque tâche prête,
+   **dev-backend** ou **dev-frontend** selon sa couche :
+   - À lire : `docs/architecture/NN-<f>.md` [sections Contrat d'API, Modèle de données (ou Écrans),
+     Réponse aux exigences de sécurité, la ligne de SA tâche] ; les fichiers de code de sa tâche ;
+     pour le frontend, la section Design system de l'architecture globale.
+   - Données : le texte des RG/ES (et critères d'acceptation) de sa tâche, recopié du PRD.
+3. Dès qu'une tâche est faite, **testeur** :
+   - À lire : les fichiers listés dans le compte rendu du dev.
+   - Données : le texte des RG/ES de la tâche ; la commande de tests (CLAUDE.md).
+4. Échec dû au code -> renvoie au dev les échecs dans les Données (2 allers-retours maximum).
 
 ## Étape 5 - Integrate
-Lance toute la suite de tests du projet, les migrations, le lint, et si disponibles
-`bandit -r .` et `npm audit`. Note le résultat dans le journal.
+Lance toi-même la suite de tests, les migrations, le lint, et si disponibles `bandit -r .` et
+`npm audit`. Relève la liste des fichiers modifiés de la branche (`git diff --name-only main...`).
 
-## Étape 6 - Review : relecteurs en parallèle (2 cycles de correction maximum)
-1. Lance EN PARALLÈLE **relecteur-conformite**, **relecteur-securite** et **relecteur-qualite**,
-   chacun avec les chemins du PRD et du dossier d'architecture et la branche à relire.
-2. S'il y a au moins un BLOQUANT : envoie chaque problème au dev de la couche concernée
-   (c'est l'étape Fix), relance les tests de l'étape 5, puis relance les relecteurs.
-3. Au bout de 2 cycles de correction, passe à l'étape 7 même s'il reste des problèmes, et liste-les.
+## Étape 6 - Review en parallèle (2 cycles de correction maximum)
+1. Lance EN PARALLÈLE :
+   - **relecteur-conformite** : À lire `docs/prd/NN-<f>.md` et les fichiers modifiés ;
+     Données : la commande de tests.
+   - **relecteur-securite** : À lire `docs/architecture/NN-<f>.md` [section Réponse aux exigences de
+     sécurité] et les fichiers modifiés ; Données : le texte des ES-xx, les commandes de scan.
+   - **relecteur-qualite** : À lire `docs/architecture/NN-<f>.md` [sections Contrat d'API, Modèle
+     de données, Décisions] et les fichiers modifiés.
+2. Au moins un BLOQUANT -> Fix : envoie chaque problème au dev de la couche concernée
+   (À lire : uniquement les fichiers cités dans les problèmes ; Données : les problèmes), puis
+   refais l'étape 5 et relance seulement les relecteurs qui avaient bloqué.
+3. Après 2 cycles, passe à l'étape 7 en listant les problèmes restants.
 
 ## Étape 7 - Merge (ARRÊT OBLIGATOIRE)
-Écris `docs/pipeline/<fonctionnalite>-rapport.md` : tâches livrées, résultat des tests et des scans,
-avis final de chaque relecteur, corrections appliquées, problèmes restants. Prépare le commit et
-la description de PR, indique la prochaine fonctionnalité « à faire », puis ARRÊTE-TOI.
-- Accord -> fusionne la branche, passe le statut de la fonctionnalité à « livrée » dans le PRD
-  principal, puis ENCHAÎNE directement sur la prochaine fonctionnalité « à faire » (retour à
-  l'étape 1). S'il n'en reste aucune, termine par un bilan du projet.
-- Refus -> ne fusionne pas, laisse le statut « en cours » et termine.
-- « Arrête-toi là » -> fusionne, passe le statut à « livrée », et termine sans enchaîner.
+Écris `docs/pipeline/NN-<f>-rapport.md` (court) : tâches, tests, scans, avis des relecteurs,
+corrections, problèmes restants, prochaine fonctionnalité. Prépare le commit et la description de
+PR, puis ARRÊTE-TOI.
+- Accord -> fusionne, statut « livrée », puis ENCHAÎNE sur la prochaine « à faire » (étape 1).
+  S'il n'en reste aucune, termine par un bilan court du projet.
+- Refus -> pas de fusion, statut « en cours », fin.
+- « Arrête-toi là » -> fusionne, statut « livrée », fin.
 
 ## Règles permanentes
 - Tu ne sautes jamais une étape et ne modifies jamais toi-même le PRD, le design ou le code.
-- Les seuils (8/10, sécurité 7, 3 tours, 2 cycles) ne se négocient pas : ils sont la règle de l'équipe.
-- Les identifiants US/RG/ES/T sont uniques dans tout le projet et apparaissent jusque dans les noms des tests.
-- Les seuls arrêts sont ceux des étapes 3 et 7 (et la question sur le cahier des charges introuvable).
+- Seuils non négociables : 8/10, sécurité 7, 3 tours de design, 2 cycles de correction.
+- Seul l'analyste-produit lit le cahier des charges.
+- Chaque agent ne lit que ce que sa fiche de mission liste.

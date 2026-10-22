@@ -26,10 +26,12 @@
 - **ADR-NN** : <décision>. Alternatives écartées : <...>, parce que <...>.
 
 ## Tâches
-| Tâche | Couche | Description | RG | ES | Dépend de |
-| --- | --- | --- | --- | --- | --- |
-| T-01 | backend | ... | RG-01 | ES-02 | |
-| T-02 | frontend | ... | | ES-01 | |
+| Tâche | Couche | Description | RG | ES | Dépend de | Fichiers créés ou modifiés |
+| --- | --- | --- | --- | --- | --- | --- |
+| T-01 | backend | ... | RG-01 | ES-02 | | `app/models.py`, `app/views.py` |
+| T-02 | frontend | ... | | ES-01 | | `frontend/app/.../page.tsx` |
+
+La colonne « Fichiers » limite ce que chaque dev lira : il n'ouvre que ces fichiers.
 
 ## Historique
 - Tour 1 : moyenne x/10, sécurité y/10, objections : ... ; corrections apportées : ...

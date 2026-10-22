@@ -80,6 +80,30 @@ exemple/
 Chaque agent ne reçoit que les outils dont il a besoin. Le Critique et les relecteurs ne peuvent
 pas modifier le code qu'ils jugent : c'est le principe des **droits minimaux**.
 
+### Modèle de chaque agent et économie de tokens
+
+| Agent | Modèle | Outils |
+| --- | --- | --- |
+| analyste-produit | Opus 5.5 | Read, Write, Edit |
+| architecte | Opus 5.5 | Read, Write, Edit, Glob |
+| critique | Opus 5.5 | Read |
+| dev-backend, dev-frontend | Opus 5.5 | Read, Write, Edit, Bash, Grep, Glob |
+| testeur | Sonnet | Read, Write, Edit, Bash |
+| relecteur-conformite, relecteur-securite, relecteur-qualite | Sonnet | Read, Grep, Bash |
+
+Trois règles limitent la consommation :
+
+1. **La fiche de mission.** Le chef d'orchestre donne à chaque agent la liste exacte des fichiers
+   (et des sections) à lire, ce qu'il doit écrire, et recopie directement les petites informations
+   (texte des RG/ES d'une tâche, objections, problèmes à corriger). L'agent ne lit rien d'autre et
+   n'explore pas le projet.
+2. **Seul l'Analyste lit le cahier des charges.** Une fois le PRD validé, c'est lui la référence.
+3. **Des comptes rendus de 10 lignes maximum.** Les détails restent dans les fichiers ; le chef
+   d'orchestre ne garde que l'essentiel.
+
+`CLAUDE.md` est volontairement court (il est chargé par chaque agent à chaque action), et
+l'Analyste et le Critique ne le chargent pas (`omitClaudeMd`).
+
 ---
 
 ## 3. Les étapes, une par une
@@ -103,7 +127,7 @@ se parlent pas entre eux : **ils communiquent par les fichiers** de `docs/`.
 | | |
 | --- | --- |
 | **Quand** | Après le cadrage, puis au début de chaque nouvelle fonctionnalité. |
-| **Lit** | Le cahier des charges, le PRD principal s'il existe, les PRD existants (pour ne pas réutiliser un identifiant). |
+| **Lit** | Uniquement les sections du cahier qui concernent la fonctionnalité, le glossaire et les exigences transverses du PRD principal, le modèle de PRD. Le chef d'orchestre lui donne les derniers identifiants utilisés. |
 | **Fait** | Liste les questions et hypothèses, puis rédige le PRD : user stories et critères d'acceptation, règles de gestion **RG-xx**, exigences de sécurité **ES-xx**, priorités, hors périmètre. |
 | **Écrit** | `docs/prd/NN-<fonctionnalite>.md` (NN = son ordre dans le PRD principal). |
 | **Ensuite** | Le chef d'orchestre passe à l'architecte. |
@@ -113,7 +137,7 @@ se parlent pas entre eux : **ils communiquent par les fichiers** de `docs/`.
 | | |
 | --- | --- |
 | **Quand** | Après l'Analyste ; puis à chaque renvoi du Critique ou de l'humain. |
-| **Lit** | Le PRD principal et celui de la fonctionnalité, l'architecture globale, le code existant concerné, et les objections éventuelles. |
+| **Lit** | Le PRD de la fonctionnalité, les sections utiles du PRD principal, l'architecture globale, le modèle. Jamais le cahier des charges. Les objections lui sont recopiées dans sa fiche. |
 | **Fait** | *System design* : stack (celle de `CLAUDE.md`), modèle de données, **contrat d'API figé**, mesure technique pour **chaque ES-xx**, design system, décisions **ADR-xx**, découpage en tâches **T-xx** indépendantes. |
 | **Écrit** | `docs/architecture/00-architecture-globale.md` (premier passage) et `docs/architecture/NN-<fonctionnalite>.md`. |
 | **Ensuite** | Le Critique. |
@@ -266,7 +290,8 @@ agent seul, par exemple : « Utilise l'agent critique sur docs/architecture/01-c
 | --- | --- |
 | Changer un seuil ou un plafond (8/10, sécurité 7, 3 tours, 2 corrections) | `.claude/skills/pipeline/SKILL.md` et `grille-critique.md` |
 | Changer le comportement d'un agent | son fichier dans `.claude/agents/` |
-| Donner un autre modèle à un agent (ex. un vrai second avis) | ajouter `model: opus` ou `model: sonnet` dans l'en-tête de son fichier |
+| Changer ce qu'un agent lit | sa fiche de mission, à son étape dans `SKILL.md` |
+| Changer le modèle d'un agent | le champ `model:` dans l'en-tête de son fichier (`claude-opus-5-5`, `sonnet`...) |
 | Ajouter un agent (ex. UI/UX, DevOps) | un nouveau fichier dans `.claude/agents/` + son étape dans `SKILL.md` |
 | Changer la structure du PRD ou du design | `.claude/skills/pipeline/modeles/` |
 | Changer la façon de découper un projet en fonctionnalités | le mode CADRAGE de `.claude/agents/analyste-produit.md` |
